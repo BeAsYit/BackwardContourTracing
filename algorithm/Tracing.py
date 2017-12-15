@@ -1,11 +1,14 @@
+import math
 from PIL import Image
 
 
 class Tracing:
     def __init__(self):
+
+        image = Image.open("../data/1.jpg")
         self.backgroundPixels = []
         self.contourPixels = []
-        self.image_params = self.image_params()
+        self.image_params = (image.size[1],image.size[0], image.load())
         self.search = ((0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1))
 
     def find_backgroundPixels(self):
@@ -40,7 +43,7 @@ class Tracing:
 
     def draw_countour(self):
         img = Image.open("../data/1.jpg")
-
+        print(self.contourPixels)
         for pixel in self.backgroundPixels:
             img.putpixel(pixel, (0, 0, 255))
         for pixel in self.contourPixels:
@@ -75,13 +78,8 @@ class Tracing:
         return self.search.index((previous[0] - active[0], previous[1] - active[1])) + 1
 
     @staticmethod
-    def image_params():
-        image = Image.open("../data/1.jpg")
-        width = image.size[0]
-        height = image.size[1]
-        pixels = image.load()
-        return height, width, pixels
-
+    def is_grey(rgb):
+        return math.sqrt(rgb[0] ** 2 + rgb[1] ** 2 + rgb[2] ** 2) < 50
 
 a = Tracing()
 a.find_backgroundPixels()
