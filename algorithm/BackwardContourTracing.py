@@ -64,8 +64,8 @@ class BackwardContourTracing:
     def find_start_pixel(self):
         for height in range(self.image_params[0]):
             for width in range(self.image_params[1]):
-                if self.image_params[2][width, height][0] > 50 or self.image_params[2][width, height][1] > 50 or \
-                                self.image_params[2][width, height][2] > 50:
+                if not math.sqrt(self.image_params[2][width, height][0] ** 2 + self.image_params[2][width, height][1]
+                        ** 2 + self.image_params[2][width, height][2] ** 2) < 50:
                     return width, height
 
     def clockwise(self, activeP, previousP=False, index_previousP=0):
