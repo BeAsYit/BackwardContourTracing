@@ -1,23 +1,30 @@
-import math
 from PIL import Image
+import math
+
 
 
 class Tracing:
     def __init__(self):
 
-        image = Image.open("../data/1.jpg")
+        image = Image.open("../data/2.jpg")
         self.backgroundPixels = []
         self.contourPixels = []
-        self.image_params = (image.size[1],image.size[0], image.load())
+        self.image_params = (image.size[1], image.size[0], image.load())
         self.search = ((0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1))
 
-    def find_backgroundPixels(self):
-        for height in range(self.image_params[0]):
-            for width in range(self.image_params[1]):
-                if self.image_params[2][width, height][0] > 50 or self.image_params[2][width, height][1] > 50 or \
-                                self.image_params[2][width, height][2] > 50:
-                    continue
-                self.backgroundPixels.append((width, height))
+    def find_backgroundPixels(self, xy):
+            # try:
+            #     if self.image_params[2][xy[0], xy[1]][0] > 50 or self.image_params[2][xy[0], xy[1]][1] > 50 or \
+            #                     self.image_params[2][xy[0], xy[1]][2] > 50:
+            #         return False
+            # except IndexError:
+            #     return True
+            # return True
+            try:
+                return math.sqrt( self.image_params[2][xy[0], xy[1]][0] ** 2 + self.image_params[2][xy[0], xy[1]][1] ** 2 + self.image_params[2][xy[0], xy[1]][2] ** 2) < 50
+            except IndexError:
+                return True
+
 
     def tracing(self):
         startP = activeP = self.find_start_pixel()
@@ -33,21 +40,27 @@ class Tracing:
                 contour_neighbourP = self.clockwise(activeP, True, previous_index)
                 if contour_neighbourP != endP:
                     if contour_neighbourP not in self.contourPixels:
+                        if not activeP or not contour_neighbourP:
+                            break
                         self.contourPixels.append(contour_neighbourP)
-                    else:
-                        break
-                    previous_index = self.find_previous_index(activeP, contour_neighbourP)
-                    activeP = contour_neighbourP
+                        previous_index = self.find_previous_index(contour_neighbourP, activeP)
+                        activeP = contour_neighbourP
+                    elif contour_neighbourP in self.contourPixels:
+                        previous_index = self.find_previous_index(contour_neighbourP, activeP)
+                        self.contourPixels.remove(activeP)
+                        self.backgroundPixels.append(activeP)
+                        activeP = self.contourPixels[-1]
                 elif contour_neighbourP == endP:
                     break
 
     def draw_countour(self):
-        img = Image.open("../data/1.jpg")
+        img = Image.open("../data/2.jpg")
         print(self.contourPixels)
-        for pixel in self.backgroundPixels:
-            img.putpixel(pixel, (0, 0, 255))
         for pixel in self.contourPixels:
-            img.putpixel(pixel, (0, 255, 0))
+            try:
+                img.putpixel(pixel, (0, 255, 0))
+            except IndexError:
+                pass
         img.show()
 
     def find_start_pixel(self):
@@ -59,29 +72,28 @@ class Tracing:
 
     def clockwise(self, activeP, previousP=False, index_previousP=0):
         if previousP:
-            check = (index_previousP + 1) % 8
+            check = index_previousP % 8
             new_search = self.search[check:] + self.search[:check]
             for i in new_search:
-                if ((activeP[0] + i[0]), (activeP[1] + i[1])) not in self.backgroundPixels:
-                    return (activeP[0] + i[0]), (activeP[1] + i[1])
+                if (activeP[0] + i[0], activeP[1] + i[1]) not in self.backgroundPixels and \
+                        not self.find_backgroundPixels((activeP[0] + i[0], activeP[1] + i[1])):
+                    return activeP[0] + i[0], activeP[1] + i[1]
         else:
             for i in self.search:
-                if ((activeP[0] + i[0]), (activeP[1] + i[1])) not in self.backgroundPixels:
-                    return (activeP[0] + i[0]), (activeP[1] + i[1])
+                if (activeP[0] + i[0], activeP[1] + i[1]) not in self.backgroundPixels and \
+                        not self.find_backgroundPixels((activeP[0] + i[0], activeP[1] + i[1])):
+                    return activeP[0] + i[0], activeP[1] + i[1]
 
     def counter_clockwise(self, activeP):
         for i in reversed(self.search):
-            if ((activeP[0] + i[0]), (activeP[1] + i[1])) not in self.backgroundPixels:
-                return (activeP[0] + i[0]), (activeP[1] + i[1])
+            if (activeP[0] + i[0], activeP[1] + i[1]) not in self.backgroundPixels and \
+                    not self.find_backgroundPixels((activeP[0] + i[0], activeP[1] + i[1])):
+                return activeP[0] + i[0], activeP[1] + i[1]
 
-    def find_previous_index(self, previous, active):
-        return self.search.index((previous[0] - active[0], previous[1] - active[1])) + 1
+    def find_previous_index(self, newP, active):
+        return self.search.index((newP[0] - active[0], newP[1] - active[1])) - 1
 
-    @staticmethod
-    def is_grey(rgb):
-        return math.sqrt(rgb[0] ** 2 + rgb[1] ** 2 + rgb[2] ** 2) < 50
 
 a = Tracing()
-a.find_backgroundPixels()
 a.tracing()
 a.draw_countour()
